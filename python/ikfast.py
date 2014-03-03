@@ -312,6 +312,28 @@ if sympy_smaller_073:
     power.Pow._eval_subs = Pow_eval_subs
 
 # simplify/simplify.py
+def trigsimp_custom(self, **args):
+    """ For newer sympy versions (>=0.7.3) call trigsimp() with parameters
+        (method='groebner', polynomial=True)
+        to get the same results we had with trigsimp in sympy-0.7.1 .
+        'same' is to be read as 'tested samples had same result, no error so far',
+        I didn't look into whether they actually do all calculations equivalently or not.
+    """
+    from sympy.simplify import trigsimp as sympy_trigsimp
+    try:
+        args['method']='groebner'
+        args['polynomial']=True
+        ret = sympy_trigsimp(self, **args)
+    except PolynomialError as e:
+        log.info('Could not use groebner method for trigsimp, trying default now. Exception was: {}'.format(e))
+        del args['method']
+        del args['polynomial']
+        ret = sympy_trigsimp(self, **args)
+    return ret
+
+if not sympy_smaller_073:
+    trigsimp = trigsimp_custom
+    
 # def custom_trigsimp_nonrecursive(expr, deep=False):
 #     """
 #     A nonrecursive trig simplifier, used from trigsimp.
